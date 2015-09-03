@@ -12,54 +12,48 @@ import java.io.*;
  */
 public class LocUtilExample
 {
+    
+    public static final int OFFLINE_SIZE = 25;
+    public static final int ONLINE_SIZE = 5;
+    
     public static void main(String[] args)
     {
-        String offlinePath = "data/MU.1.5meters.offline.trace";
-        String onlinePath = "data/MU.1.5meters.online.trace";
-        
-        // Constructs parsers of trace files.
-        File offlineFile = new File(offlinePath);
-        Parser offlineParser = new Parser(offlineFile);
-        System.out.println("Offline File: " + offlineFile.getAbsoluteFile());
-        
-        File onlineFile = new File(onlinePath);
-        Parser onlineParser = new Parser(onlineFile);
-        System.out.println("Online File: " + onlineFile.getAbsoluteFile());
+        Parser offlineParser = createParser("data/MU.1.5meters.offline.trace");
+        Parser onlineParser = createParser("data/MU.1.5meters.online.trace");
         
         try
         {
-            int offlineSize = 25;
-            int onlineSize = 5;
-            
-            TraceGenerator tg = new TraceGenerator(offlineParser, onlineParser, offlineSize, onlineSize);
+            TraceGenerator tg = new TraceGenerator(offlineParser, onlineParser, OFFLINE_SIZE, ONLINE_SIZE);
             
             tg.generate();
             
             System.out.println("OFFLINE TRACES:");
             System.out.println();
             
-            for (TraceEntry entry : tg.getOffline())
-            {
-                System.out.println(
-                        entry.getGeoPosition().toStringWithoutOrientation() + ": " + entry.getSignalStrengthSamples()
-                                                                                          .size());
-            }
+            tg.getOffline().forEach(example.LocUtilExample::printTraceEntry);
             
             System.out.println();
             System.out.println();
             System.out.println("ONLINE TRACES:");
             System.out.println();
             
-            for (TraceEntry entry : tg.getOnline())
-            {
-                System.out.println(
-                        entry.getGeoPosition().toStringWithoutOrientation() + ": " + entry.getSignalStrengthSamples()
-                                                                                          .size());
-            }
+            tg.getOnline().forEach(example.LocUtilExample::printTraceEntry);
         }
         catch (NumberFormatException | IOException e)
         {
             e.printStackTrace();
         }
+    }
+    
+    private static Parser createParser(String path)
+    {
+        File file = new File(path);
+        return new Parser(file);
+    }
+    
+    private static void printTraceEntry(TraceEntry entry)
+    {
+        System.out.println(entry.getGeoPosition().toStringWithoutOrientation() + ": "
+                           + entry.getSignalStrengthSamples().size());
     }
 }
