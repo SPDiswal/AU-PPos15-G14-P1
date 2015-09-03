@@ -2,6 +2,7 @@ package example;
 
 import org.pi4.locutil.io.TraceGenerator;
 import org.pi4.locutil.trace.*;
+import solution.offline.EmpiricalStrategy;
 
 import java.io.*;
 
@@ -12,7 +13,6 @@ import java.io.*;
  */
 public class LocUtilExample
 {
-    
     public static final int OFFLINE_SIZE = 25;
     public static final int ONLINE_SIZE = 5;
     
@@ -38,6 +38,8 @@ public class LocUtilExample
             System.out.println();
             
             tg.getOnline().forEach(example.LocUtilExample::printTraceEntry);
+    
+            System.out.println(new EmpiricalStrategy().createRadioMap(tg.getOffline()).toString());
         }
         catch (NumberFormatException | IOException e)
         {
