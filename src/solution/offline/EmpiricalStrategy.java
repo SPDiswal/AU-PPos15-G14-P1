@@ -4,41 +4,79 @@ import org.pi4.locutil.*;
 import org.pi4.locutil.trace.TraceEntry;
 
 import java.util.*;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toSet;
 
 public class EmpiricalStrategy implements RadioMapStrategy
 {
-    public RadioMap createRadioMap(List<TraceEntry> entries)
+    public RadioMap createRadioMap(Set<TraceEntry> entries)
     {
         RadioMap radioMap = new RadioMap();
         
-        Set<GeoPosition> positions = entries.stream().map(TraceEntry::getGeoPosition).collect(Collectors.toSet());
+        Map<GeoPosition, Set<TraceEntry>> entriesByPosition = groupEntriesByPosition(entries);
+        Set<GeoPosition> allPositions = entriesByPosition.keySet();
         
-        for (GeoPosition position : positions)
+        for (GeoPosition position : allPositions)
         {
-            Set<TraceEntry> entriesAtPosition = entries.stream().filter(e -> e.getGeoPosition().equals(position))
-                                                       .collect(Collectors.toSet());
+            Set<TraceEntry> entriesAtPosition = entriesByPosition.get(position);
+            Set<MACAddress> accessPoints = getAvailableAccessPoints(entriesAtPosition);
             
-            Set<MACAddress> accessPoints = entriesAtPosition.stream()
-                                                            .flatMap(e -> e.getSignalStrengthSamples().keySet()
-                                                                           .stream())
-                                                            .collect(Collectors.toSet());
-    
-            radioMap.put(position, new HashMap<>());
+            Map<MACAddress, Double> averageSamples = computeAverageSignalStrengthByAccessPoint(entriesAtPosition,
+                                                                                               accessPoints);
             
-            for (MACAddress accessPoint : accessPoints)
-            {
-                double average = entriesAtPosition.stream()
-                                                  .map(TraceEntry::getSignalStrengthSamples)
-                                                  .filter(s -> s.containsKey(accessPoint))
-                                                  .flatMap(s -> s.getSignalStrengthValues(accessPoint).stream())
-                                                  .mapToDouble(s -> s)
-                                                  .average().getAsDouble();
-                
-                radioMap.get(position).put(accessPoint, average);
-            }
+            radioMap.put(position, averageSamples);
         }
         
         return radioMap;
+    }
+    
+    private static Map<GeoPosition, Set<TraceEntry>> groupEntriesByPosition(Set<TraceEntry> entries)
+    {
+        Map<GeoPosition, Set<TraceEntry>> result = new HashMap<>();
+        
+        Set<GeoPosition> allPositions = entries.stream()
+                                               .map(TraceEntry::getGeoPosition)
+                                               .collect(toSet());
+        
+        for (GeoPosition position : allPositions)
+        {
+            Set<TraceEntry> entriesAtPosition = entries.stream()
+                                                       .filter(entry -> entry.getGeoPosition().equals(position))
+                                                       .collect(toSet());
+            
+            result.put(position, entriesAtPosition);
+        }
+        
+        return Collections.unmodifiableMap(result);
+    }
+    
+    private static Set<MACAddress> getAvailableAccessPoints(Set<TraceEntry> entriesAtPosition)
+    {
+        Set<MACAddress> accessPoints = entriesAtPosition.stream()
+                                                        .flatMap(entry -> entry.getSignalStrengthSamples().keySet()
+                                                                               .stream())
+                                                        .collect(toSet());
+        
+        return Collections.unmodifiableSet(accessPoints);
+    }
+    
+    private static Map<MACAddress, Double> computeAverageSignalStrengthByAccessPoint(Set<TraceEntry> entriesAtPosition,
+                                                                                     Set<MACAddress> accessPoints)
+    {
+        Map<MACAddress, Double> result = new HashMap<>();
+        
+        for (MACAddress accessPoint : accessPoints)
+        {
+            double averageSignalStrength = entriesAtPosition.stream()
+                                                            .map(TraceEntry::getSignalStrengthSamples)
+                                                            .filter(samples -> samples.containsKey(accessPoint))
+                                                            .mapToDouble(samples -> samples
+                                                                    .getAverageSignalStrength(accessPoint))
+                                                            .average().getAsDouble();
+            
+            result.put(accessPoint, averageSignalStrength);
+        }
+        
+        return Collections.unmodifiableMap(result);
     }
 }

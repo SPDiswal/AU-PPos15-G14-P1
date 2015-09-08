@@ -5,6 +5,7 @@ import org.pi4.locutil.trace.*;
 import solution.offline.EmpiricalStrategy;
 
 import java.io.*;
+import java.util.HashSet;
 
 /**
  * Example of how to use LocUtil
@@ -39,7 +40,7 @@ public class LocUtilExample
             
             tg.getOnline().forEach(example.LocUtilExample::printTraceEntry);
     
-            System.out.println(new EmpiricalStrategy().createRadioMap(tg.getOffline()).toString());
+            System.out.println(new EmpiricalStrategy().createRadioMap(new HashSet<>(tg.getOffline())).toString());
         }
         catch (NumberFormatException | IOException e)
         {

@@ -2,9 +2,9 @@ package solution.offline;
 
 import org.pi4.locutil.trace.TraceEntry;
 
-import java.util.List;
+import java.util.Set;
 
 public interface RadioMapStrategy
 {
-    RadioMap createRadioMap(List<TraceEntry> entries);
+    RadioMap createRadioMap(Set<TraceEntry> entries);
 }
