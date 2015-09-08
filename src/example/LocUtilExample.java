@@ -1,11 +1,14 @@
 package example;
 
+import org.pi4.locutil.*;
 import org.pi4.locutil.io.TraceGenerator;
 import org.pi4.locutil.trace.*;
-import solution.offline.EmpiricalStrategy;
+import solution.offline.*;
+import solution.online.NearestNeighbourStrategy;
+import solution.utilities.Helpers;
 
 import java.io.*;
-import java.util.HashSet;
+import java.util.*;
 
 /**
  * Example of how to use LocUtil
@@ -39,8 +42,42 @@ public class LocUtilExample
             System.out.println();
             
             tg.getOnline().forEach(example.LocUtilExample::printTraceEntry);
+            
+            RadioMap radioMap = new EmpiricalStrategy().createRadioMap(new HashSet<>(tg.getOffline()));
+            
+            System.out.println(radioMap.toString());
+            
+            Map<GeoPosition, Set<TraceEntry>> entriesByPosition = Helpers
+                    .groupEntriesByPosition(new HashSet<>(tg.getOnline()));
+            
+            Set<GeoPosition> allPositions = entriesByPosition.keySet();
+            
+            System.out.println();
+            System.out.println("ESTIMATES:");
+            
+            List<Double> errors = new ArrayList<>();
+            
+            for (GeoPosition truePosition : allPositions)
+            {
+                Set<TraceEntry> entriesAtPosition = entriesByPosition.get(truePosition);
+                Set<MACAddress> accessPoints = Helpers.getAvailableAccessPoints(entriesAtPosition);
+                
+                Map<MACAddress, Double> measurements = Helpers
+                        .computeAverageSignalStrengthByAccessPoint(entriesAtPosition,
+                                                                   accessPoints);
+                
+                GeoPosition estimatedPosition = new NearestNeighbourStrategy().estimatePosition(radioMap, measurements);
     
-            System.out.println(new EmpiricalStrategy().createRadioMap(new HashSet<>(tg.getOffline())).toString());
+                double error = truePosition.distance(estimatedPosition);
+                errors.add(error);
+                
+                System.out.println(truePosition.toStringWithoutOrientation()
+                                   + " -> " + estimatedPosition.toStringWithoutOrientation()
+                                   + " (off by " + error + ")");
+            }
+            
+            System.out.println();
+            System.out.println("MEDIAN ERROR: " + Helpers.median(errors));
         }
         catch (NumberFormatException | IOException e)
         {
@@ -59,4 +96,6 @@ public class LocUtilExample
         System.out.println(entry.getGeoPosition().toStringWithoutOrientation() + ": "
                            + entry.getSignalStrengthSamples().size());
     }
+    
+    
 }
