@@ -36,12 +36,9 @@ public class ModelBasedStrategy implements RadioMapStrategy {
         Set<GeoPosition> allPositions = entriesByPosition.keySet();
 
         for (GeoPosition position : allPositions) {
-            Set<Map.Entry<MACAddress, Double>> distanceSet = accessPointPositions.entrySet().stream()
-                    .map(accessPoint -> new AbstractMap.SimpleEntry<>(accessPoint.getKey(), position.distance(accessPoint.getValue())))
-                    .collect(Collectors.<Map.Entry<MACAddress, Double>>toSet());
-
-            Map<MACAddress, Double> distances = distanceSet.stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
+            Map<MACAddress, Double> distances = accessPointPositions.entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, entry -> position.distance(entry.getValue())));
+            
             Map<MACAddress, Double> signalStrengths = distances.entrySet().stream()
                     .collect(Collectors.toMap(Map.Entry::getKey, entry -> signalStrength(entry.getValue())));
             
