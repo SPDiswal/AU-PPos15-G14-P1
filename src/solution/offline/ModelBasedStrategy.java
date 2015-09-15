@@ -5,14 +5,14 @@ import org.pi4.locutil.MACAddress;
 import org.pi4.locutil.trace.TraceEntry;
 import solution.utilities.Helpers;
 
-import java.util.AbstractMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.log;
 
-public class ModelBasedStrategy implements RadioMapStrategy {
+public class ModelBasedStrategy implements FingerprintingStrategy
+{
     private Map<MACAddress, GeoPosition> accessPointPositions;
 
     private final double n;

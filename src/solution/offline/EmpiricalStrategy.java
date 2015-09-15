@@ -6,7 +6,7 @@ import solution.utilities.Helpers;
 
 import java.util.*;
 
-public class EmpiricalStrategy implements RadioMapStrategy
+public class EmpiricalStrategy implements FingerprintingStrategy
 {
     public RadioMap createRadioMap(Set<TraceEntry> entries)
     {
