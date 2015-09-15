@@ -107,7 +107,7 @@ public class WiFiPositioningSystem
         }
         
         RadioMap radioMap = train(traceGenerator, fingerprintingStrategy);
-        Map<GeoPosition, GeoPosition> results = test(traceGenerator, estimationStrategy, radioMap);
+        Set<GeoPositionPair> results = test(traceGenerator, estimationStrategy, radioMap);
         
         writeResultsToFile(results, outputPath);
     }
@@ -143,44 +143,36 @@ public class WiFiPositioningSystem
         return fingerprintingStrategy.createRadioMap(new HashSet<>(traceGenerator.getOffline()));
     }
     
-    private static Map<GeoPosition, GeoPosition> test(TraceGenerator traceGenerator,
+    private static Set<GeoPositionPair> test(TraceGenerator traceGenerator,
                                                       EstimationStrategy estimationStrategy,
                                                       RadioMap radioMap)
     {
-        Map<GeoPosition, GeoPosition> results = new HashMap<>();
-        
-        Map<GeoPosition, Set<TraceEntry>> entriesByPosition = Helpers
-                .groupEntriesByPosition(new HashSet<>(traceGenerator.getOnline()));
-        
-        Set<GeoPosition> allPositions = entriesByPosition.keySet();
-        
-        for (GeoPosition truePosition : allPositions)
+        Set<GeoPositionPair> results = new HashSet<>();
+
+        Set<TraceEntry> onlineEntries = new HashSet<>(traceGenerator.getOnline());
+
+        for (TraceEntry entry : onlineEntries)
         {
-            Set<TraceEntry> entriesAtPosition = entriesByPosition.get(truePosition);
-            Set<MACAddress> accessPoints = Helpers.getAvailableAccessPoints(entriesAtPosition);
-            
-            Map<MACAddress, Double> measurements = Helpers
-                    .computeAverageSignalStrengthByAccessPoint(entriesAtPosition,
-                                                               accessPoints);
-            
+            Map<MACAddress, Double> measurements = entry.getSignalStrengthSamples().keySet().stream()
+                    .collect(toMap(key -> key, key -> entry.getSignalStrengthSamples().getAverageSignalStrength(key)));
+
             GeoPosition estimatedPosition = estimationStrategy.estimatePosition(radioMap, measurements);
             
-            results.put(truePosition, estimatedPosition);
+            results.add(new GeoPositionPair(entry.getGeoPosition(), estimatedPosition));
         }
         
         return results;
     }
     
-    private static void writeResultsToFile(Map<GeoPosition, GeoPosition> results, String outputPath) throws IOException
+    private static void writeResultsToFile(Set<GeoPositionPair> results, String outputPath) throws IOException
     {
         File file = new File(outputPath);
         
         try (FileWriter writer = new FileWriter(file))
         {
-            String output = results.entrySet()
-                                   .stream()
-                                   .map(entry -> entry.getKey().toStringWithoutOrientation()
-                                                 + " " + entry.getValue().toStringWithoutOrientation())
+            String output = results.stream()
+                                   .map(entry -> entry.getTruePosition().toStringWithoutOrientation()
+                                                 + " " + entry.getEstimatedPosition().toStringWithoutOrientation())
                                    .collect(Collectors.joining(System.lineSeparator()));
             
             writer.write(output);
@@ -190,18 +182,16 @@ public class WiFiPositioningSystem
     private static void generateErrorFunction(String filename) throws IOException
     {
         File inputFile = new File(filename);
-        Map<GeoPosition, GeoPosition> results;
-        
+        Set<GeoPositionPair> results;
+
         try (BufferedReader reader = new BufferedReader(new FileReader(inputFile)))
         {
             results = reader.lines()
                             .filter(line -> !line.startsWith("#"))
-                            .map(line -> line.split("[)] [(]"))
-                            .collect(toMap(tokens -> GeoPosition.parse(tokens[0].replace("(", "")),
-                                           tokens -> GeoPosition.parse(tokens[1].replace(")", ""))));
+                            .collect(toSet(line -> GeoPositionPair.parse(line)));
         }
         
-        List<Double> errors = results.entrySet()
+        /*List<Double> errors = results.entrySet()
                                      .stream()
                                      .map(entry -> entry.getKey().distance(entry.getValue()))
                                      .collect(toList());
@@ -217,7 +207,7 @@ public class WiFiPositioningSystem
             {
                 writer.write(errors.get(i) + " " + ((i + 1.0) / n) + System.lineSeparator());
             }
-        }
+        }*/
     }
     
     private static void displayHelp()
