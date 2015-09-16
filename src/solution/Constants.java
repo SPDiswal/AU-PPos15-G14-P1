@@ -9,8 +9,8 @@ public class Constants
     public static final String OFFLINE_TRACES = "data/MU.1.5meters.offline.trace";
     public static final String ACCESS_POINT_POSITIONS = "data/MU.AP.positions";
     
-    private static final String OUTPUT_PATH = "output/";
-    private static final String EXPERIMENT_OUTPUT_PATH = "output/experiments/";
+    public static final String OUTPUT_PATH = "output/";
+    public static final String EXPERIMENT_OUTPUT_PATH = "output/experiments/";
     
     
 }
