@@ -1,7 +1,7 @@
 package solution.experiments;
 
 import solution.Constants;
-import solution.offline.*;
+import solution.offline.EmpiricalStrategy;
 
 import java.io.*;
 import java.util.*;
@@ -26,11 +26,16 @@ public class ExperimentRunner
     public ExperimentRunner()
     {
         this.experiments = new HashMap<>();
-    
-        this.experiments.put("distanceToSignalStrength-Empirical", new DistanceToSignalStrengthExperiment(new EmpiricalStrategy()));
-        this.experiments.put("kToMedianError-Empirical", new KToMedianErrorExperiment(new EmpiricalStrategy()));
+        
+        add("distanceToSignalStrength-Empirical", new DistanceToSignalStrengthExperiment(new EmpiricalStrategy()));
+        add("kToMedianError-Empirical", new KToMedianErrorExperiment(new EmpiricalStrategy()));
         
         this.experiments = Collections.unmodifiableMap(this.experiments);
+    }
+    
+    private void add(String name, ExperimentStrategy experiment)
+    {
+        this.experiments.put(name, experiment);
     }
     
     public void run() throws IOException
@@ -52,15 +57,15 @@ public class ExperimentRunner
                         System.out.println("Iteration " + i);
                     }
                 }
-        
+                
                 String output = experiments.get(name)
                                            .aggregateResults(results)
                                            .stream()
                                            .map(e -> e.getFirst() + "\t" + e.getSecond())
                                            .collect(Collectors.joining(System.lineSeparator()));
-        
+                
                 writer.write(output);
-    
+                
                 System.out.println("Finished.");
                 System.out.println();
             }
