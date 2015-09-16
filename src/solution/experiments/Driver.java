@@ -12,7 +12,8 @@ import solution.utilities.Helpers;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by Thomas on 16-09-2015.
@@ -34,9 +35,9 @@ public class Driver
         String outputFileName;
         Map<MACAddress, GeoPosition> accessPointPositions = Helpers.loadAccessPoints(ACCESS_POINT_DATA);
 
-        //fingerprintingStrategy = new EmpiricalStrategy();
-        //outputFileName = OUTPUT_PATH + EMPIRICAL_OUTPUT;
-        //signalStrengthsAndDistances(fingerprintingStrategy, outputFileName, accessPointPositions);
+        fingerprintingStrategy = new EmpiricalStrategy();
+        outputFileName = OUTPUT_PATH + EMPIRICAL_OUTPUT;
+        signalStrengthsAndDistances(fingerprintingStrategy, outputFileName, accessPointPositions);
 
         fingerprintingStrategy = new ModelBasedStrategy(accessPointPositions, 3.415, 1, -33.77, Double.NEGATIVE_INFINITY);
         outputFileName = OUTPUT_PATH + MODELBASED_OUTPUT;
@@ -50,23 +51,36 @@ public class Driver
 
         File outputFile = new File(outputFileName);
 
+        HashMap<Double, List<Double>> accResults = new HashMap<>();
+
         try (FileWriter writer = new FileWriter(outputFile))
         {
-            String output;
-            for (GeoPosition position : radioMap.keySet())
-            {
-                for (MACAddress ap : radioMap.get(position).keySet())
+            for (int i = 0; i < 100; i++) {
+
+                for (GeoPosition position : radioMap.keySet())
                 {
-                    GeoPosition apPosition = accessPointPositions.get(ap);
-                    if(apPosition == null){
-                        continue;
+                    for (MACAddress ap : radioMap.get(position).keySet())
+                    {
+                        GeoPosition apPosition = accessPointPositions.get(ap);
+                        if(apPosition == null){
+                            continue;
+                        }
+                        Double distance = position.distance(apPosition);
+                        Double signalStrength = radioMap.get(position).get(ap);
+
+                        if (!accResults.containsKey(distance)) {
+                            accResults.put(distance, new ArrayList<>());
+                        }
+                        accResults.get(distance).add(signalStrength);
                     }
-                    Double distance = position.distance(apPosition);
-                    Double signalStrength = radioMap.get(position).get(ap);
-                    output = distance + " " + signalStrength;
-                    writer.write(output + System.lineSeparator());
                 }
             }
+
+            String output = accResults.entrySet().stream()
+                    .map(entry -> entry.getKey() + "\t" + entry.getValue().stream().mapToDouble(s -> s).average().getAsDouble())
+                    .collect(Collectors.joining(System.lineSeparator()));
+
+            writer.write(output);
         }
     }
 }
