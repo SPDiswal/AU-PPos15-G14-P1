@@ -188,12 +188,12 @@ public class WiFiPositioningSystem
         {
             results = reader.lines()
                             .filter(line -> !line.startsWith("#"))
-                            .collect(toSet(line -> GeoPositionPair.parse(line)));
+                            .map(GeoPositionPair::parse)
+                            .collect(toSet());
         }
         
-        /*List<Double> errors = results.entrySet()
-                                     .stream()
-                                     .map(entry -> entry.getKey().distance(entry.getValue()))
+        List<Double> errors = results.stream()
+                                     .map(entry -> entry.getTruePosition().distance(entry.getEstimatedPosition()))
                                      .collect(toList());
         
         Collections.sort(errors);
@@ -207,7 +207,7 @@ public class WiFiPositioningSystem
             {
                 writer.write(errors.get(i) + " " + ((i + 1.0) / n) + System.lineSeparator());
             }
-        }*/
+        }
     }
     
     private static void displayHelp()
