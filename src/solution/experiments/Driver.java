@@ -67,11 +67,8 @@ public class Driver
                 TraceGenerator traceGenerator = Helpers.loadTraces(OFFLINE_DATA, ONLINE_DATA, OFFLINE_SIZE, ONLINE_SIZE);
                 RadioMap radioMap = Helpers.train(traceGenerator, fingerprintingStrategy);
                 Set<GeoPositionPair> results = Helpers.test(traceGenerator, estimationStrategy, radioMap);
-                List<Double> errors = results.stream()
-                        .map(entry -> entry.getTruePosition().distance(entry.getEstimatedPosition()))
-                        .collect(toList());
 
-                Collections.sort(errors);
+                List<Double> errors = Helpers.computeErrors(results);
 
                 int n = errors.size();
                 for (int j = 0; j < n; j++) {
