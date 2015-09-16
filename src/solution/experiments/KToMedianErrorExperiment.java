@@ -23,6 +23,7 @@ public class KToMedianErrorExperiment implements ExperimentStrategy
         this.fingerprintingStrategy = fingerprintingStrategy;
     }
     
+    @Override
     public List<DoublePair> runExperiment() throws IOException
     {
         List<DoublePair> results = new ArrayList<>();
@@ -39,17 +40,7 @@ public class KToMedianErrorExperiment implements ExperimentStrategy
         return results;
     }
     
-    private double run(int k,
-                       TraceGenerator traceGenerator,
-                       FingerprintingStrategy fingerprintingStrategy) throws IOException
-    {
-        RadioMap radioMap = Helpers.train(traceGenerator, fingerprintingStrategy);
-        Set<GeoPositionPair> results = Helpers.test(traceGenerator, new KNearestNeighbourStrategy(k), radioMap);
-        List<Double> errors = Helpers.computeErrors(results);
-        
-        return Helpers.median(errors);
-    }
-    
+    @Override
     public List<DoublePair> aggregateResults(List<DoublePair> results)
     {
         Map<Double, List<Double>> groups = results.stream()
@@ -59,7 +50,19 @@ public class KToMedianErrorExperiment implements ExperimentStrategy
         return groups.entrySet()
                      .stream()
                      .map(e -> DoublePair.from(e.getKey(),
-                                               e.getValue().stream().mapToDouble(i -> i).average().getAsDouble()))
+                                               e.getValue().stream().mapToDouble(d -> d).average().getAsDouble()))
+                     .sorted((a, b) -> Double.compare(a.getFirst(), b.getFirst()))
                      .collect(toList());
+    }
+    
+    private double run(int k,
+                       TraceGenerator traceGenerator,
+                       FingerprintingStrategy fingerprintingStrategy) throws IOException
+    {
+        RadioMap radioMap = Helpers.train(traceGenerator, fingerprintingStrategy);
+        Set<GeoPositionPair> results = Helpers.test(traceGenerator, new KNearestNeighbourStrategy(k), radioMap);
+        List<Double> errors = Helpers.computeErrors(results);
+        
+        return Helpers.median(errors);
     }
 }

@@ -64,6 +64,7 @@ public class DistanceToSignalStrengthExperiment implements ExperimentStrategy
                      .stream()
                      .map(e -> DoublePair.from(e.getKey(),
                                                e.getValue().stream().mapToDouble(d -> d).average().getAsDouble()))
+                     .sorted((a, b) -> Double.compare(a.getFirst(), b.getFirst()))
                      .collect(toList());
     }
 }
