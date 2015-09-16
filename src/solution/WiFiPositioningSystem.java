@@ -140,11 +140,7 @@ public class WiFiPositioningSystem
                             .collect(toSet());
         }
         
-        List<Double> errors = results.stream()
-                                     .map(entry -> entry.getTruePosition().distance(entry.getEstimatedPosition()))
-                                     .collect(toList());
-        
-        Collections.sort(errors);
+        List<Double> errors = Helpers.computeErrors(results);
         
         File outputFile = new File(OUTPUT_PATH + SCORE_OUTPUT_NAME); // TODO Remove input file extension and concat with score output name.
         int n = errors.size();
@@ -162,6 +158,4 @@ public class WiFiPositioningSystem
     {
         System.out.println("USAGE: WiFiPositioningSystem [e: empirical] ..."); // TODO
     }
-    
-
 }

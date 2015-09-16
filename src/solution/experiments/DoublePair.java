@@ -11,6 +11,11 @@ public class DoublePair
         this.second = second;
     }
     
+    public static DoublePair from(double first, double second)
+    {
+        return new DoublePair(first, second);
+    }
+    
     public double getFirst()
     {
         return first;
