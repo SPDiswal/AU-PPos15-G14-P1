@@ -8,7 +8,6 @@ import solution.utilities.Helpers;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.*;
 
@@ -57,17 +56,14 @@ public class DistanceToSignalStrengthExperiment implements ExperimentStrategy
     @Override
     public List<DoublePair> aggregateResults(List<DoublePair> results)
     {
-        Map<Double, List<Double>> collectedMap = results.stream()
-                                                        .collect(groupingBy(DoublePair::getFirst,
-                                                                            mapping(DoublePair::getSecond, toList())));
+        Map<Double, List<Double>> groups = results.stream()
+                                                  .collect(groupingBy(DoublePair::getFirst,
+                                                                      mapping(DoublePair::getSecond, toList())));
         
-        List<DoublePair> resultList = collectedMap.entrySet().stream()
-                                                  .map(entry -> DoublePair.from(entry.getKey(),
-                                                                                entry.getValue().stream()
-                                                                                     .mapToDouble(d -> d).average()
-                                                                                     .getAsDouble()))
-                                                  .collect(Collectors.toList());
-        
-        return resultList;
+        return groups.entrySet()
+                     .stream()
+                     .map(e -> DoublePair.from(e.getKey(),
+                                               e.getValue().stream().mapToDouble(d -> d).average().getAsDouble()))
+                     .collect(toList());
     }
 }
