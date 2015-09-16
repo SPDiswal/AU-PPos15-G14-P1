@@ -2,17 +2,12 @@ package solution.utilities;
 
 import org.pi4.locutil.*;
 import org.pi4.locutil.io.TraceGenerator;
-import org.pi4.locutil.trace.Parser;
-import org.pi4.locutil.trace.TraceEntry;
+import org.pi4.locutil.trace.*;
 import solution.GeoPositionPair;
-import solution.offline.FingerprintingStrategy;
-import solution.offline.RadioMap;
+import solution.offline.*;
 import solution.online.EstimationStrategy;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 import static java.util.stream.Collectors.*;
@@ -91,74 +86,77 @@ public class Helpers
             return (lower + upper) / 2.0;
         }
     }
-
+    
     /////
-
+    
     private static Parser createParser(String path)
     {
         File file = new File(path);
         return new Parser(file);
     }
-
-    public static TraceGenerator loadTraces(String offlineData, String onlineData, int offlineSize, int onlineSize) throws IOException
+    
+    public static TraceGenerator loadTraces(String offlineData,
+                                            String onlineData,
+                                            int offlineSize,
+                                            int onlineSize) throws IOException
     {
         Parser offlineParser = createParser(offlineData);
         Parser onlineParser = createParser(onlineData);
-
+        
         TraceGenerator traceGenerator = new TraceGenerator(offlineParser, onlineParser, offlineSize, onlineSize);
-
+        
         traceGenerator.generate();
         return traceGenerator;
     }
-
+    
     public static RadioMap train(TraceGenerator traceGenerator,
-                                  FingerprintingStrategy fingerprintingStrategy) throws IOException
+                                 FingerprintingStrategy fingerprintingStrategy) throws IOException
     {
         return fingerprintingStrategy.createRadioMap(new HashSet<>(traceGenerator.getOffline()));
     }
-
+    
     public static Set<GeoPositionPair> test(TraceGenerator traceGenerator,
-                                             EstimationStrategy estimationStrategy,
-                                             RadioMap radioMap)
+                                            EstimationStrategy estimationStrategy,
+                                            RadioMap radioMap)
     {
         Set<GeoPositionPair> results = new HashSet<>();
-
+        
         Set<TraceEntry> onlineEntries = new HashSet<>(traceGenerator.getOnline());
-
+        
         for (TraceEntry entry : onlineEntries)
         {
             Map<MACAddress, Double> measurements = entry.getSignalStrengthSamples().keySet().stream()
-                    .collect(toMap(key -> key, key -> entry.getSignalStrengthSamples().getAverageSignalStrength(key)));
-
+                                                        .collect(toMap(key -> key,
+                                                                       key -> entry.getSignalStrengthSamples()
+                                                                                   .getAverageSignalStrength(key)));
+            
             GeoPosition estimatedPosition = estimationStrategy.estimatePosition(radioMap, measurements);
-
+            
             results.add(new GeoPositionPair(entry.getGeoPosition(), estimatedPosition));
         }
-
+        
         return results;
     }
-
+    
     public static Map<MACAddress, GeoPosition> loadAccessPoints(String path) throws IOException
     {
         File file = new File(path);
-
+        
         try (BufferedReader reader = new BufferedReader(new FileReader(file)))
         {
             return reader.lines()
-                    .filter(line -> !line.startsWith("#"))
-                    .map(line -> line.split(" "))
-                    .collect(toMap(tokens -> MACAddress.parse(tokens[0]),
-                            tokens -> GeoPosition.parse(tokens[1] + " " + tokens[2] + " " + tokens[3])));
+                         .filter(line -> !line.startsWith("#"))
+                         .map(line -> line.split(" "))
+                         .collect(toMap(tokens -> MACAddress.parse(tokens[0]),
+                                        tokens -> GeoPosition.parse(tokens[1] + " " + tokens[2] + " " + tokens[3])));
         }
     }
     
     public static List<Double> computeErrors(Set<GeoPositionPair> results)
     {
-        List<Double> errors = results.stream()
-                                     .map(entry -> entry.getTruePosition().distance(entry.getEstimatedPosition()))
-                                     .collect(toList());
-        
-        Collections.sort(errors);
-        return errors;
+        return results.stream()
+                      .map(entry -> entry.getTruePosition().distance(entry.getEstimatedPosition()))
+                      .sorted()
+                      .collect(toList());
     }
 }

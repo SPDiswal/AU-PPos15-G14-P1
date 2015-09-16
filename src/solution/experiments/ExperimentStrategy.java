@@ -7,5 +7,5 @@ public interface ExperimentStrategy
 {
     List<DoublePair> runExperiment() throws IOException;
     
-    List<DoublePair> aggregateResults(Set<List<DoublePair>> results);
+    List<DoublePair> aggregateResults(List<DoublePair> results);
 }
