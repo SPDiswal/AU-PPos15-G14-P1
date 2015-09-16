@@ -15,8 +15,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 
-import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.*;
 
 public class Helpers
 {
@@ -151,5 +150,15 @@ public class Helpers
                     .collect(toMap(tokens -> MACAddress.parse(tokens[0]),
                             tokens -> GeoPosition.parse(tokens[1] + " " + tokens[2] + " " + tokens[3])));
         }
+    }
+    
+    public static List<Double> computeErrors(Set<GeoPositionPair> results)
+    {
+        List<Double> errors = results.stream()
+                                     .map(entry -> entry.getTruePosition().distance(entry.getEstimatedPosition()))
+                                     .collect(toList());
+        
+        Collections.sort(errors);
+        return errors;
     }
 }
