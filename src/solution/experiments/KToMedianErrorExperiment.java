@@ -16,7 +16,7 @@ import static java.util.stream.Collectors.*;
  */
 public class KToMedianErrorExperiment implements ExperimentStrategy
 {
-    private EmpiricalStrategy fingerprintingStrategy;
+    private final EmpiricalStrategy fingerprintingStrategy;
     
     public KToMedianErrorExperiment(EmpiricalStrategy fingerprintingStrategy)
     {
