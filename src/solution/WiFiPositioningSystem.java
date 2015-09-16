@@ -60,8 +60,8 @@ public class WiFiPositioningSystem
     {
         String outputPath = OUTPUT_PATH;
         
-        TraceGenerator traceGenerator = loadTraces();
-        Map<MACAddress, GeoPosition> accessPointPositions = loadAccessPoints();
+        TraceGenerator traceGenerator = Helpers.loadTraces(OFFLINE_DATA, ONLINE_DATA, OFFLINE_SIZE, ONLINE_SIZE);
+        Map<MACAddress, GeoPosition> accessPointPositions = Helpers.loadAccessPoints(ACCESS_POINT_DATA);
         
         FingerprintingStrategy fingerprintingStrategy;
         EstimationStrategy estimationStrategy;
@@ -106,62 +106,10 @@ public class WiFiPositioningSystem
             return;
         }
         
-        RadioMap radioMap = train(traceGenerator, fingerprintingStrategy);
-        Set<GeoPositionPair> results = test(traceGenerator, estimationStrategy, radioMap);
+        RadioMap radioMap = Helpers.train(traceGenerator, fingerprintingStrategy);
+        Set<GeoPositionPair> results = Helpers.test(traceGenerator, estimationStrategy, radioMap);
         
         writeResultsToFile(results, outputPath);
-    }
-    
-    private static TraceGenerator loadTraces() throws IOException
-    {
-        Parser offlineParser = createParser(OFFLINE_DATA);
-        Parser onlineParser = createParser(ONLINE_DATA);
-        
-        TraceGenerator traceGenerator = new TraceGenerator(offlineParser, onlineParser, OFFLINE_SIZE, ONLINE_SIZE);
-        
-        traceGenerator.generate();
-        return traceGenerator;
-    }
-    
-    private static Map<MACAddress, GeoPosition> loadAccessPoints() throws IOException
-    {
-        File file = new File(ACCESS_POINT_DATA);
-        
-        try (BufferedReader reader = new BufferedReader(new FileReader(file)))
-        {
-            return reader.lines()
-                         .filter(line -> !line.startsWith("#"))
-                         .map(line -> line.split(" "))
-                         .collect(toMap(tokens -> MACAddress.parse(tokens[0]),
-                                        tokens -> GeoPosition.parse(tokens[1] + " " + tokens[2] + " " + tokens[3])));
-        }
-    }
-    
-    private static RadioMap train(TraceGenerator traceGenerator,
-                                  FingerprintingStrategy fingerprintingStrategy) throws IOException
-    {
-        return fingerprintingStrategy.createRadioMap(new HashSet<>(traceGenerator.getOffline()));
-    }
-    
-    private static Set<GeoPositionPair> test(TraceGenerator traceGenerator,
-                                                      EstimationStrategy estimationStrategy,
-                                                      RadioMap radioMap)
-    {
-        Set<GeoPositionPair> results = new HashSet<>();
-
-        Set<TraceEntry> onlineEntries = new HashSet<>(traceGenerator.getOnline());
-
-        for (TraceEntry entry : onlineEntries)
-        {
-            Map<MACAddress, Double> measurements = entry.getSignalStrengthSamples().keySet().stream()
-                    .collect(toMap(key -> key, key -> entry.getSignalStrengthSamples().getAverageSignalStrength(key)));
-
-            GeoPosition estimatedPosition = estimationStrategy.estimatePosition(radioMap, measurements);
-            
-            results.add(new GeoPositionPair(entry.getGeoPosition(), estimatedPosition));
-        }
-        
-        return results;
     }
     
     private static void writeResultsToFile(Set<GeoPositionPair> results, String outputPath) throws IOException
@@ -215,9 +163,5 @@ public class WiFiPositioningSystem
         System.out.println("USAGE: WiFiPositioningSystem [e: empirical] ..."); // TODO
     }
     
-    private static Parser createParser(String path)
-    {
-        File file = new File(path);
-        return new Parser(file);
-    }
+
 }
