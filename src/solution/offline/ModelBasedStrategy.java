@@ -19,7 +19,17 @@ public class ModelBasedStrategy implements FingerprintingStrategy
     private final double d0;
     private final double p_d0;
     private final double unhearableThreshold;
-
+    
+    public ModelBasedStrategy(Map<MACAddress, GeoPosition> accessPointPositions)
+    {
+        this.accessPointPositions = accessPointPositions;
+    
+        this.n = 3.415;
+        this.d0 = 1;
+        this.p_d0 = -33.77;
+        this.unhearableThreshold = Double.NEGATIVE_INFINITY;
+    }
+    
     public ModelBasedStrategy(Map<MACAddress, GeoPosition> accessPointPositions, double n, double d0, double p_d0, double unhearableThreshold) {
         this.accessPointPositions = accessPointPositions;
 

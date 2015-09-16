@@ -1,7 +1,10 @@
 package solution.experiments;
 
+import org.pi4.locutil.*;
 import solution.Constants;
-import solution.offline.EmpiricalStrategy;
+import solution.offline.*;
+import solution.online.*;
+import solution.utilities.Helpers;
 
 import java.io.*;
 import java.util.*;
@@ -23,12 +26,24 @@ public class ExperimentRunner
     
     private Map<String, ExperimentStrategy> experiments;
     
-    public ExperimentRunner()
+    public ExperimentRunner() throws IOException
     {
         this.experiments = new HashMap<>();
+        Map<MACAddress, GeoPosition> accessPoints = Helpers.loadAccessPoints(Constants.ACCESS_POINT_POSITIONS);
+    
+        FingerprintingStrategy empirical = new EmpiricalStrategy();
+        FingerprintingStrategy model = new ModelBasedStrategy(accessPoints);
+        EstimationStrategy nearestNeighbour = new NearestNeighbourStrategy();
+        EstimationStrategy threeNearestNeighbours = new KNearestNeighbourStrategy(3);
         
-        add("distanceToSignalStrength-Empirical", new DistanceToSignalStrengthExperiment(new EmpiricalStrategy()));
-        add("kToMedianError-Empirical", new KToMedianErrorExperiment(new EmpiricalStrategy()));
+        add("distanceToSignalStrength-Empirical", new DistanceToSignalStrengthExperiment(empirical));
+        add("distanceToSignalStrength-Model", new DistanceToSignalStrengthExperiment(model));
+        add("cumulativeError-Empirical-NN", new ErrorFunctionExperiment(empirical, nearestNeighbour));
+        add("cumulativeError-Empirical-KNN", new ErrorFunctionExperiment(empirical, threeNearestNeighbours));
+        add("cumulativeError-Model-NN", new ErrorFunctionExperiment(model, nearestNeighbour));
+        add("cumulativeError-Model-KNN", new ErrorFunctionExperiment(model, threeNearestNeighbours));
+        add("kToMedianError-Empirical", new KToMedianErrorExperiment(empirical));
+        add("kToMedianError-Model", new KToMedianErrorExperiment(model));
         
         this.experiments = Collections.unmodifiableMap(this.experiments);
     }
