@@ -2,7 +2,6 @@ package solution;
 
 import org.pi4.locutil.*;
 import org.pi4.locutil.io.TraceGenerator;
-import org.pi4.locutil.trace.*;
 import solution.offline.*;
 import solution.online.*;
 import solution.utilities.Helpers;
@@ -11,22 +10,15 @@ import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toSet;
 
 public class WiFiPositioningSystem
 {
-    private static final int OFFLINE_SIZE = 25;
-    private static final int ONLINE_SIZE = 5;
-    
-    private static final String ONLINE_DATA = "data/MU.1.5meters.online.trace";
-    private static final String OFFLINE_DATA = "data/MU.1.5meters.offline.trace";
-    private static final String ACCESS_POINT_DATA = "data/MU.AP.positions";
-    
-    private static final String OUTPUT_PATH = "output/";
     private static final String EMPIRICAL_OUTPUT_NAME = "empirical-fp";
     private static final String MODEL_BASED_OUTPUT_NAME = "model-fp";
     private static final String NEAREST_NEIGHBOUR_OUTPUT_NAME = "-nn.txt";
     private static final String K_NEAREST_NEIGHBOUR_OUTPUT_NAME = "-knn.txt";
+    
     private static final String SCORE_OUTPUT_NAME = "score.txt";
     
     public static void main(String[] args)
@@ -35,14 +27,7 @@ public class WiFiPositioningSystem
         {
             if (args.length >= 2)
             {
-                if (args[0].toUpperCase().startsWith("-S"))
-                {
-                    generateErrorFunction(args[1]);
-                }
-                else
-                {
-                    trainAndTest(args);
-                }
+                trainAndTest(args);
             }
             else
             {
@@ -51,17 +36,17 @@ public class WiFiPositioningSystem
         }
         catch (IOException e)
         {
-            // TODO
             e.printStackTrace();
         }
     }
     
     private static void trainAndTest(String[] args) throws IOException
     {
-        String outputPath = OUTPUT_PATH;
+        String outputPath = Constants.OUTPUT_PATH;
         
-        TraceGenerator traceGenerator = Helpers.loadTraces(OFFLINE_DATA, ONLINE_DATA, OFFLINE_SIZE, ONLINE_SIZE);
-        Map<MACAddress, GeoPosition> accessPointPositions = Helpers.loadAccessPoints(ACCESS_POINT_DATA);
+        TraceGenerator traceGenerator = Helpers.loadTraces(Constants.OFFLINE_TRACES, Constants.ONLINE_TRACES,
+                                                           Constants.OFFLINE_SIZE, Constants.ONLINE_SIZE);
+        Map<MACAddress, GeoPosition> accessPointPositions = Helpers.loadAccessPoints(Constants.ACCESS_POINT_POSITIONS);
         
         FingerprintingStrategy fingerprintingStrategy;
         EstimationStrategy estimationStrategy;
@@ -76,13 +61,14 @@ public class WiFiPositioningSystem
         }
         else if (args[argIndex].toUpperCase().startsWith("-M"))
         {
-            fingerprintingStrategy = new ModelBasedStrategy(accessPointPositions,
-                                                            3.415,
-                                                            1,
-                                                            -33.77,
-                                                            Double.NEGATIVE_INFINITY /* TODO Read from arguments */);
+            fingerprintingStrategy = new ModelBasedStrategy(accessPointPositions);
             outputPath += MODEL_BASED_OUTPUT_NAME;
             argIndex += 1;
+        }
+        else if (args[argIndex].toUpperCase().startsWith("-S"))
+        {
+            generateErrorFunction(args[argIndex + 1]);
+            return;
         }
         else
         {
@@ -94,11 +80,21 @@ public class WiFiPositioningSystem
         {
             estimationStrategy = new NearestNeighbourStrategy();
             outputPath += NEAREST_NEIGHBOUR_OUTPUT_NAME;
+            argIndex += 1;
         }
         else if (args[argIndex].toUpperCase().startsWith("-KNN"))
         {
-            estimationStrategy = new KNearestNeighbourStrategy(Integer.parseInt(args[argIndex + 1]));
-            outputPath += K_NEAREST_NEIGHBOUR_OUTPUT_NAME;
+            try
+            {
+                estimationStrategy = new KNearestNeighbourStrategy(Integer.parseInt(args[argIndex + 1]));
+                outputPath += K_NEAREST_NEIGHBOUR_OUTPUT_NAME;
+                argIndex += 2;
+            }
+            catch (NumberFormatException e)
+            {
+                displayHelp();
+                return;
+            }
         }
         else
         {
@@ -110,6 +106,15 @@ public class WiFiPositioningSystem
         Set<GeoPositionPair> results = Helpers.test(traceGenerator, estimationStrategy, radioMap);
         
         writeResultsToFile(results, outputPath);
+        
+        if (args[argIndex].toUpperCase().startsWith("-S"))
+        {
+            generateErrorFunction(outputPath);
+        }
+        else
+        {
+            displayHelp();
+        }
     }
     
     private static void writeResultsToFile(Set<GeoPositionPair> results, String outputPath) throws IOException
@@ -131,7 +136,7 @@ public class WiFiPositioningSystem
     {
         File inputFile = new File(filename);
         Set<GeoPositionPair> results;
-
+        
         try (BufferedReader reader = new BufferedReader(new FileReader(inputFile)))
         {
             results = reader.lines()
@@ -142,7 +147,11 @@ public class WiFiPositioningSystem
         
         List<Double> errors = Helpers.computeErrors(results);
         
-        File outputFile = new File(OUTPUT_PATH + SCORE_OUTPUT_NAME); // TODO Remove input file extension and concat with score output name.
+        String scoreFilename = filename.substring(0, filename.lastIndexOf("."))
+                               + "-"
+                               + SCORE_OUTPUT_NAME;
+        
+        File outputFile = new File(scoreFilename);
         int n = errors.size();
         
         try (FileWriter writer = new FileWriter(outputFile))
@@ -156,6 +165,12 @@ public class WiFiPositioningSystem
     
     private static void displayHelp()
     {
-        System.out.println("USAGE: WiFiPositioningSystem [e: empirical] ..."); // TODO
+        System.out.println("USAGE: WiFiPositioningSystem\n"
+                           + "[-e: empirical fingerprinting]\n"
+                           + "[-m: model-based fingerprinting]\n"
+                           + "[-nn: nearest neighbour estimation]\n"
+                           + "[-knn K: K nearest neighbour estimation]\n"
+                           + "[-s: compute score]\n"
+                           + "[filename: output file to compute score from]");
     }
 }
