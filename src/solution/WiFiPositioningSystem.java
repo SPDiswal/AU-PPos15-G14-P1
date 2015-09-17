@@ -25,14 +25,7 @@ public class WiFiPositioningSystem
     {
         try
         {
-            if (args.length >= 2)
-            {
-                trainAndTest(args);
-            }
-            else
-            {
-                displayHelp();
-            }
+            trainAndTest(args);
         }
         catch (IOException e)
         {
@@ -53,19 +46,42 @@ public class WiFiPositioningSystem
         
         int argIndex = 0;
         
-        if (args[argIndex].toUpperCase().startsWith("-E"))
+        if (ensureArgs(args, argIndex, 1) && args[argIndex].toUpperCase().startsWith("--E"))
         {
+            argIndex += 1;
             fingerprintingStrategy = new EmpiricalStrategy();
             outputPath += EMPIRICAL_OUTPUT_NAME;
-            argIndex += 1;
         }
-        else if (args[argIndex].toUpperCase().startsWith("-M"))
+        else if (ensureArgs(args, argIndex, 1) && args[argIndex].toUpperCase().startsWith("--M"))
         {
-            fingerprintingStrategy = new ModelBasedStrategy(accessPointPositions);
-            outputPath += MODEL_BASED_OUTPUT_NAME;
             argIndex += 1;
+            
+            if (ensureArgs(args, argIndex, 3) && !args[argIndex].toUpperCase().startsWith("--"))
+            {
+                try
+                {
+                    double n = Double.parseDouble(args[argIndex]);
+                    double d0 = Double.parseDouble(args[argIndex + 1]);
+                    double p_d0 = Double.parseDouble(args[argIndex + 2]);
+                    
+                    fingerprintingStrategy = new ModelBasedStrategy(accessPointPositions, n, d0, p_d0,
+                                                                    Constants.UNHEARABLE_THRESHOLD);
+                    argIndex += 3;
+                }
+                catch (NumberFormatException e)
+                {
+                    System.out.println("Model parameters must be numbers.");
+                    return;
+                }
+            }
+            else
+            {
+                fingerprintingStrategy = new ModelBasedStrategy(accessPointPositions);
+            }
+            
+            outputPath += MODEL_BASED_OUTPUT_NAME;
         }
-        else if (args[argIndex].toUpperCase().startsWith("-S"))
+        else if (ensureArgs(args, argIndex, 2) && args[argIndex].toUpperCase().startsWith("--S"))
         {
             generateErrorFunction(args[argIndex + 1]);
             return;
@@ -76,23 +92,23 @@ public class WiFiPositioningSystem
             return;
         }
         
-        if (args[argIndex].toUpperCase().startsWith("-NN"))
+        if (ensureArgs(args, argIndex, 1) && args[argIndex].toUpperCase().startsWith("--NN"))
         {
+            argIndex += 1;
             estimationStrategy = new NearestNeighbourStrategy();
             outputPath += NEAREST_NEIGHBOUR_OUTPUT_NAME;
-            argIndex += 1;
         }
-        else if (args[argIndex].toUpperCase().startsWith("-KNN"))
+        else if (ensureArgs(args, argIndex, 2) && args[argIndex].toUpperCase().startsWith("--KNN"))
         {
             try
             {
                 estimationStrategy = new KNearestNeighbourStrategy(Integer.parseInt(args[argIndex + 1]));
-                outputPath += K_NEAREST_NEIGHBOUR_OUTPUT_NAME;
                 argIndex += 2;
+                outputPath += K_NEAREST_NEIGHBOUR_OUTPUT_NAME;
             }
             catch (NumberFormatException e)
             {
-                displayHelp();
+                System.out.println("K must be a positive natural number.");
                 return;
             }
         }
@@ -107,13 +123,9 @@ public class WiFiPositioningSystem
         
         writeResultsToFile(results, outputPath);
         
-        if (args[argIndex].toUpperCase().startsWith("-S"))
+        if (ensureArgs(args, argIndex, 1) && args[argIndex].toUpperCase().startsWith("--S"))
         {
             generateErrorFunction(outputPath);
-        }
-        else
-        {
-            displayHelp();
         }
     }
     
@@ -166,11 +178,17 @@ public class WiFiPositioningSystem
     private static void displayHelp()
     {
         System.out.println("USAGE: WiFiPositioningSystem\n"
-                           + "[-e: empirical fingerprinting]\n"
-                           + "[-m: model-based fingerprinting]\n"
-                           + "[-nn: nearest neighbour estimation]\n"
-                           + "[-knn K: K nearest neighbour estimation]\n"
-                           + "[-s: compute score]\n"
-                           + "[filename: output file to compute score from]");
+                           + "    --e: empirical fingerprinting\n"
+                           + "    --m: model-based fingerprinting\n"
+                           + "    --m n d0 p_d0: model-based fingerprinting with custom parameters\n"
+                           + "    --nn: nearest neighbour estimation\n"
+                           + "    --knn K: K nearest neighbour estimation\n"
+                           + "    --s: compute score from current context\n"
+                           + "    --s filename: compute score from output file");
+    }
+    
+    private static boolean ensureArgs(String[] args, int argIndex, int argsNeeded)
+    {
+        return args.length - argIndex >= argsNeeded;
     }
 }
