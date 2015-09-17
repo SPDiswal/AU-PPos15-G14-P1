@@ -16,6 +16,9 @@ import static java.util.stream.Collectors.*;
  */
 public class KToMedianErrorExperiment implements ExperimentStrategy
 {
+    private static final int LOWER_K = 1;
+    private static final int UPPER_K = 10;
+    
     private final FingerprintingStrategy fingerprintingStrategy;
     
     public KToMedianErrorExperiment(FingerprintingStrategy fingerprintingStrategy)
@@ -31,7 +34,7 @@ public class KToMedianErrorExperiment implements ExperimentStrategy
         TraceGenerator traceGenerator = Helpers.loadTraces(Constants.OFFLINE_TRACES, Constants.ONLINE_TRACES,
                                                            Constants.OFFLINE_SIZE, Constants.ONLINE_SIZE);
         
-        for (int k = 1; k <= 5; k++)
+        for (int k = LOWER_K; k <= UPPER_K; k++)
         {
             double medianError = run(k, traceGenerator, fingerprintingStrategy);
             results.add(DoublePair.from(k, medianError));

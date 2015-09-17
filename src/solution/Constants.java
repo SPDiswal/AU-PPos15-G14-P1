@@ -12,5 +12,5 @@ public class Constants
     public static final String OUTPUT_PATH = "output/";
     public static final String EXPERIMENT_OUTPUT_PATH = "output/experiments/";
     
-    
+    public static final double UNHEARABLE_THRESHOLD = -120.0;
 }
