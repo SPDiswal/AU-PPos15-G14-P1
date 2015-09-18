@@ -12,7 +12,7 @@ import java.util.*;
 import static java.util.stream.Collectors.*;
 
 /**
- * Created by Nikolaj on 16-09-2015.
+ * First experiment of Part II.
  */
 public class DistanceToSignalStrengthExperiment implements ExperimentStrategy
 {
@@ -26,10 +26,8 @@ public class DistanceToSignalStrengthExperiment implements ExperimentStrategy
     @Override
     public List<DoublePair> runExperiment() throws IOException
     {
-        TraceGenerator traceGenerator = Helpers.loadTraces(Constants.OFFLINE_TRACES,
-                                                           Constants.ONLINE_TRACES,
-                                                           Constants.OFFLINE_SIZE,
-                                                           Constants.ONLINE_SIZE);
+        TraceGenerator traceGenerator = Helpers.loadTraces(Constants.OFFLINE_TRACES, Constants.ONLINE_TRACES,
+                                                           Constants.OFFLINE_SAMPLE_SIZE, Constants.ONLINE_SAMPLE_SIZE);
         Map<MACAddress, GeoPosition> accessPointPositions = Helpers.loadAccessPoints(Constants.ACCESS_POINT_POSITIONS);
         
         RadioMap radioMap = Helpers.train(traceGenerator, fingerprintingStrategy);
@@ -54,7 +52,7 @@ public class DistanceToSignalStrengthExperiment implements ExperimentStrategy
     }
     
     @Override
-    public List<DoublePair> aggregateResults(List<DoublePair> results)
+    public List<DoublePair> aggregateResults(Collection<DoublePair> results)
     {
         Map<Double, List<Double>> groups = results.stream()
                                                   .collect(groupingBy(DoublePair::getFirst,

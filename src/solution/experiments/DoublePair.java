@@ -30,12 +30,10 @@ public class DoublePair
     {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        
-        DoublePair that = (DoublePair) o;
-        
-        if (Double.compare(that.first, first) != 0) return false;
-        return Double.compare(that.second, second) == 0;
     
+        DoublePair that = (DoublePair) o;
+    
+        return Double.compare(that.first, first) == 0 && Double.compare(that.second, second) == 0;
     }
     
     public int hashCode()

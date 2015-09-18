@@ -2,26 +2,27 @@ package solution;
 
 import org.pi4.locutil.GeoPosition;
 
-/**
- * Created by Thomas on 15-09-2015.
- */
-public class GeoPositionPair {
-    public GeoPosition getEstimatedPosition() {
+public class GeoPositionPair
+{
+    public GeoPosition getEstimatedPosition()
+    {
         return estimatedPosition;
     }
-
-    public GeoPosition getTruePosition() {
+    
+    public GeoPosition getTruePosition()
+    {
         return truePosition;
     }
-
+    
     private GeoPosition truePosition;
     private GeoPosition estimatedPosition;
-
-    public GeoPositionPair(GeoPosition truePosition, GeoPosition estimatedPosition){
+    
+    public GeoPositionPair(GeoPosition truePosition, GeoPosition estimatedPosition)
+    {
         this.truePosition = truePosition;
         this.estimatedPosition = estimatedPosition;
     }
-
+    
     public static GeoPositionPair parse(String input)
     {
         String[] tokens = input.split("[)] [(]");

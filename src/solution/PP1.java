@@ -12,14 +12,14 @@ import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toSet;
 
-public class WiFiPositioningSystem
+public class PP1
 {
     private static final String EMPIRICAL_OUTPUT_NAME = "empirical-fp";
     private static final String MODEL_BASED_OUTPUT_NAME = "model-fp";
     private static final String NEAREST_NEIGHBOUR_OUTPUT_NAME = "-nn.txt";
     private static final String K_NEAREST_NEIGHBOUR_OUTPUT_NAME = "-knn.txt";
     
-    private static final String SCORE_OUTPUT_NAME = "score.txt";
+    private static final String SCORE_OUTPUT_NAME = "-score.txt";
     
     public static void main(String[] args)
     {
@@ -38,7 +38,7 @@ public class WiFiPositioningSystem
         String outputPath = Constants.OUTPUT_PATH;
         
         TraceGenerator traceGenerator = Helpers.loadTraces(Constants.OFFLINE_TRACES, Constants.ONLINE_TRACES,
-                                                           Constants.OFFLINE_SIZE, Constants.ONLINE_SIZE);
+                                                           Constants.OFFLINE_SAMPLE_SIZE, Constants.ONLINE_SAMPLE_SIZE);
         Map<MACAddress, GeoPosition> accessPointPositions = Helpers.loadAccessPoints(Constants.ACCESS_POINT_POSITIONS);
         
         FingerprintingStrategy fingerprintingStrategy;
@@ -102,13 +102,23 @@ public class WiFiPositioningSystem
         {
             try
             {
-                estimationStrategy = new KNearestNeighbourStrategy(Integer.parseInt(args[argIndex + 1]));
-                argIndex += 2;
-                outputPath += K_NEAREST_NEIGHBOUR_OUTPUT_NAME;
+                int k = Integer.parseInt(args[argIndex + 1]);
+                
+                if (k >= 1)
+                {
+                    estimationStrategy = new KNearestNeighbourStrategy(k);
+                    argIndex += 2;
+                    outputPath += K_NEAREST_NEIGHBOUR_OUTPUT_NAME;
+                }
+                else
+                {
+                    System.out.println("K must be a positive integer.");
+                    return;
+                }
             }
             catch (NumberFormatException e)
             {
-                System.out.println("K must be a positive natural number.");
+                System.out.println("K must be a positive integer.");
                 return;
             }
         }
@@ -132,6 +142,7 @@ public class WiFiPositioningSystem
     private static void writeResultsToFile(Set<GeoPositionPair> results, String outputPath) throws IOException
     {
         File file = new File(outputPath);
+        file.getParentFile().mkdirs();
         
         try (FileWriter writer = new FileWriter(file))
         {
@@ -159,11 +170,11 @@ public class WiFiPositioningSystem
         
         List<Double> errors = Helpers.computeErrors(results);
         
-        String scoreFilename = filename.substring(0, filename.lastIndexOf("."))
-                               + "-"
-                               + SCORE_OUTPUT_NAME;
+        String scoreFilename = filename.substring(0, filename.lastIndexOf(".")) + SCORE_OUTPUT_NAME;
         
         File outputFile = new File(scoreFilename);
+        outputFile.getParentFile().mkdirs();
+        
         int n = errors.size();
         
         try (FileWriter writer = new FileWriter(outputFile))
@@ -177,7 +188,7 @@ public class WiFiPositioningSystem
     
     private static void displayHelp()
     {
-        System.out.println("USAGE: WiFiPositioningSystem\n"
+        System.out.println("USAGE: PP1\n"
                            + "    --e: empirical fingerprinting\n"
                            + "    --m: model-based fingerprinting\n"
                            + "    --m n d0 p_d0: model-based fingerprinting with custom parameters\n"

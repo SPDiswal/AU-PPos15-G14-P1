@@ -12,17 +12,15 @@ import java.util.*;
 import static java.util.stream.Collectors.*;
 
 /**
- * Created by Thomas on 16-09-2015.
+ * Second experiment of Part II.
  */
 public class ErrorFunctionExperiment implements ExperimentStrategy
 {
-    
     private final FingerprintingStrategy fingerprintingStrategy;
     private final EstimationStrategy estimationStrategy;
     
     public ErrorFunctionExperiment(FingerprintingStrategy fingerprintingStrategy, EstimationStrategy estimationStrategy)
     {
-        
         this.fingerprintingStrategy = fingerprintingStrategy;
         this.estimationStrategy = estimationStrategy;
     }
@@ -30,13 +28,12 @@ public class ErrorFunctionExperiment implements ExperimentStrategy
     @Override
     public List<DoublePair> runExperiment() throws IOException
     {
-        
         List<DoublePair> result = new ArrayList<>();
         
         TraceGenerator traceGenerator = Helpers.loadTraces(Constants.OFFLINE_TRACES,
                                                            Constants.ONLINE_TRACES,
-                                                           Constants.OFFLINE_SIZE,
-                                                           Constants.ONLINE_SIZE);
+                                                           Constants.OFFLINE_SAMPLE_SIZE,
+                                                           Constants.ONLINE_SAMPLE_SIZE);
         RadioMap radioMap = Helpers.train(traceGenerator, fingerprintingStrategy);
         Set<GeoPositionPair> results = Helpers.test(traceGenerator, estimationStrategy, radioMap);
         
@@ -54,7 +51,7 @@ public class ErrorFunctionExperiment implements ExperimentStrategy
     }
     
     @Override
-    public List<DoublePair> aggregateResults(List<DoublePair> results)
+    public List<DoublePair> aggregateResults(Collection<DoublePair> results)
     {
         Map<Double, List<Double>> groups = results.stream()
                                                   .collect(groupingBy(DoublePair::getFirst,
@@ -62,7 +59,7 @@ public class ErrorFunctionExperiment implements ExperimentStrategy
         
         return groups.entrySet()
                      .stream()
-                     .map(e -> DoublePair.from(e.getValue().stream().mapToDouble(i -> i).average().getAsDouble(),
+                     .map(e -> DoublePair.from(e.getValue().stream().mapToDouble(d -> d).average().getAsDouble(),
                                                e.getKey()))
                      .sorted((a, b) -> Double.compare(a.getFirst(), b.getFirst()))
                      .collect(toList());

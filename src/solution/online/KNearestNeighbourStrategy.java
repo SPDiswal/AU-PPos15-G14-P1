@@ -11,8 +11,6 @@ import static java.lang.Math.*;
 
 public class KNearestNeighbourStrategy implements EstimationStrategy
 {
-    private static final int COMMON_ACCESS_POINTS_THRESHOLD = 3;
-    
     private int k;
     
     public KNearestNeighbourStrategy(int k)
@@ -34,11 +32,11 @@ public class KNearestNeighbourStrategy implements EstimationStrategy
             if (radioMap.get(position).isEmpty()) continue;
             
             Set<MACAddress> knownAccessPoints = radioMap.get(position).keySet();
-            Set<MACAddress> accessPointsInCommon = Helpers.intersection(measuredAccessPoints, knownAccessPoints);
+            Set<MACAddress> commonAccessPoints = Helpers.intersection(measuredAccessPoints, knownAccessPoints);
             Set<MACAddress> allAccessPoints = Helpers.union(measuredAccessPoints, knownAccessPoints);
             
-            double sum = (accessPointsInCommon.size() >= COMMON_ACCESS_POINTS_THRESHOLD ? accessPointsInCommon
-                                                                                        : allAccessPoints)
+            double sum = (commonAccessPoints.size() >= Constants.COMMON_ACCESS_POINTS_THRESHOLD ? commonAccessPoints
+                                                                                                : allAccessPoints)
                     .stream()
                     .mapToDouble(a -> pow(measurements.getOrDefault(a, Constants.UNHEARABLE_THRESHOLD)
                                           - radioMap.get(position).getOrDefault(a, Constants.UNHEARABLE_THRESHOLD), 2))
