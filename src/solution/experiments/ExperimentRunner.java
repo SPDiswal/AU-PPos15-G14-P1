@@ -97,7 +97,7 @@ public class ExperimentRunner
     
     private Collection<DoublePair> runSequentially(String name, ExperimentStrategy experiment) throws IOException
     {
-        System.out.print("[" + name + "] Initialising\r");
+        System.out.print("[" + name + "] Initialising              \r");
         Collection<DoublePair> results = new ArrayList<>();
         long startTime = System.nanoTime();
         
@@ -107,11 +107,11 @@ public class ExperimentRunner
             
             long timeSpent = Math.round((System.nanoTime() - startTime) / 1000000000.0);
             long completion = Math.round(100.0 * j / NUMBER_OF_ITERATIONS);
-            System.out.print("[" + name + "] " + completion + "% (" + timeSpent + " s)\r");
+            System.out.print("[" + name + "] " + completion + "% (" + timeSpent + " s)              \r");
         }
         
         long timeSpent = Math.round((System.nanoTime() - startTime) / 1000000000.0);
-        System.out.println("[" + name + "] Done in " + timeSpent + " s");
+        System.out.println("[" + name + "] Done in " + timeSpent + " s              ");
         return results;
     }
     
@@ -119,7 +119,7 @@ public class ExperimentRunner
                                                                                              ExecutionException,
                                                                                              InterruptedException
     {
-        System.out.print("[" + name + "] Initialising\r");
+        System.out.print("[" + name + "] Initialising              \r");
         Collection<DoublePair> results = new ConcurrentLinkedQueue<>();
         AtomicInteger completedIterations = new AtomicInteger(0);
         int processorsToUse = Math.max(Runtime.getRuntime().availableProcessors() / 2, 1);
@@ -135,16 +135,16 @@ public class ExperimentRunner
                     long timeSpent = Math.round((System.nanoTime() - startTime) / 1000000000.0);
                     long completion = Math.round(100.0 * completedIterations.incrementAndGet()
                                                  / NUMBER_OF_ITERATIONS);
-                    System.out.print("[" + name + "] " + completion + "% (" + timeSpent + " s)\r");
+                    System.out.print("[" + name + "] " + completion + "% (" + timeSpent + " s)              \r");
                 }
                 catch (IOException e)
                 {
-                    System.out.println("[" + name + "] FAILED: " + e.getMessage());
+                    System.out.println("[" + name + "] FAILED: " + e.getMessage() + "              ");
                 }
             });
             
             long timeSpent = Math.round((System.nanoTime() - startTime) / 1000000000.0);
-            System.out.println("[" + name + "] Done in " + timeSpent + " s");
+            System.out.println("[" + name + "] Done in " + timeSpent + " s              ");
         }).get();
         
         return results;
